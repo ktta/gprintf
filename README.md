@@ -40,9 +40,9 @@ It doesn't do grouping either, using the ' flag.
 ## Compilation
 
 There are three options you can set to enable glibc compatible behaviour:
-- gprintf_OPTION_denormal_glib
-- gprintf_OPTION_dollar_resets_flags_glib
-- gprintf_OPTION_pointer_precision_glib
+- gprintf_OPTION_denormal_glibc
+- gprintf_OPTION_dollar_resets_flags_glibc
+- gprintf_OPTION_pointer_precision_glibc
 
 You can set all three by defining the macro gprintf_glibc_compat.
 
@@ -134,7 +134,7 @@ same type for the argument. For instance, an integer is assumed for width
 and precision values. This is compatible with an argument which is implied
 to be an integer due to a '%d' formatter. 
 ```
-printf("%1$*1d", 42);
+printf("%1$*1$d", 42);
 ```
 Is a valid use. 
 
