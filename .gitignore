@@ -1,0 +1,8 @@
+testp
+testp-coverage
+testp.c
+*.gcda
+*.info
+*.gcno
+report/*
+report
