@@ -172,7 +172,7 @@ The focus of my library is to output strings that will be parsed by
 other programs. Therefore, I also follow the musl strategy and use 
 the '.' character as a decimal point.
 
-## Future Directions
+## Things to Do
 
 The output object shall contain a field which records the number of bytes
 written so far. This will be used by the _out() function. This function
@@ -192,9 +192,21 @@ Wide characters which can not be converted to multi-byte sequences are
 currently replaced by the 'X' character. The POSIX specification says
 that such characters should result in the EILSEQ error.
 
-The glibc extension '%m' can be quite useful. An integer counterpart
-'%M' could also be implemented. It is also supported by musl according
-to the manual page.
+## Future Work
+
+The glibc/musl extension '%m' can be quite useful. An mnemonic counterpart
+'%M' could also be implemented. 
+
+A couple of formatters for printing dates and times would be extremely useful.
+
+A 'transport float' format could be nice. It would consist of a sign,
+a hexadecimal integer and an exponent (base 2). Such an output could
+potentially be parsed by existing tools.
+
+Generic printers could be registered and then used as ("%lpNAME!", ptr).
+
+Precision for strings should in fact specify characters, not bytes. This
+would apply to both multibyte strings and wide strings.
 
 ## References
 
