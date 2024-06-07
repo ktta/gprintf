@@ -17,4 +17,5 @@ covreport: testp-coverage
 	genhtml testp.gcda.info -o report
 
 clean:
-	rm -f *.o testp testp-coverage *.info *.gcda *.gcov *.gcno
+	rm -f *.o testp testp-coverage *.info *.gcda *.gcov *.gcno testp.c
+	rm -Rf report
