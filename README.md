@@ -46,7 +46,7 @@ There are three options you can set to enable glibc compatible behaviour:
 
 You can set all three by defining the macro gprintf_glibc_compat.
 
-### Denormalized Numbers
+## Denormal Numbers
 
 These are numbers so small in magnitude that, the regular floating point
 format isn't sufficient to encode them. So, a special encoding is used.
@@ -66,7 +66,7 @@ printf("%.0a",  0x0.008fffp-1022);
 It's worth noting that the glibc output contains a non-zero exponent
 even though the mantissa is zero.
 
-### Flags in Dollar Style Arguments
+## Flags For Dollar Style Arguments
 
 When using dollar style arguments, it's not clear where the flags should
 be. My implementation allows for them both before and after the argument
@@ -77,19 +77,19 @@ printf("[%-1$*2$s]", "Left Adjusted?", 30);
 [libc]  <[%-1$*2$s]>    // error
 [musl]  <>              // error
 ```
-In some instances, the glibc allows flags before the argument specification
+In some instances, glibc allows flags before the argument specification
 but such flags are not taken into account. The provided option enables
 that behaviour.
 
 Compatibility in this case is still a work in progress.
 
-### Pointer Precision
+## Pointer Precision
 
 The musl implementation provides a default precision and the hexadecimal
 prefix when printing pointers. The glibc implementation doesn't do any
 of that. The option mentioned above enables the glibc implementation.
 
-### Invalid Sequences
+## Invalid Sequences
 
 The C specification says that an invalid format sequence results in 
 undefined behaviour. There are three options to choose from when such
@@ -110,4 +110,101 @@ the rest of the format string. This is what musl does. The above call would
 print the string "Calculating.. " in this case.
 
 The third option is to print nothing and return an error. This is the safest
-and correct way. The library implements this approach. 
+and correct way. The library implements this approach and sets errno to
+EINVAL when it encounters invalid formats.
+
+## Type Safety
+
+Dollar style arguments make it possible to reuse an argument multiple times. 
+This can be another source of bugs if care is not taken. 
+
+Let's look at a potentially problematic call:
+```
+printf("%1$*1$s", "Hello");
+```
+The pointer to the string would also be interpreted as an integer, resulting
+in a potentially huge width. Neither glibc nor musl detects such misuse. My
+library treats this as an invalid specification and returns an error.
+
+In general, if an argument is used multiple times, all uses must imply the
+same type for the argument. For instance, an integer is assumed for width
+and precision values. This is compatible with an argument which is implied
+to be an integer due to a '%d' formatter. 
+```
+printf("%1$*1d", 42);
+```
+Is a valid use. 
+
+Pointer types are exceptions to this rule. I did this to enable calls such as
+```
+printf("%1$p %1$s", "A string printed both ways");
+```
+
+More analysis about compatibility is needed. For instance, integers implied
+by '%hhi' and '%d' are in fact compatible. They are the same size when
+received by the function due to integer promotion. However, the library
+currently disallows such multi-typed uses.
+
+## Wide Strings
+
+The specifiers '%lc' and '%ls' read wide characters and write them in 
+multi-byte format. The library uses wcrtomb() for this purpose. This 
+function relies on the locale setting LC_CTYPE in order to determine
+the encoding of wide strings. In order to set this value, your program
+should run
+```
+setlocale(LC_CTYPE, ""); 
+```
+before calling vgprintf(). 
+
+## Other Locale Specific Quirks
+
+glibc uses locale information to determine:
+- the grouping separator for the ' flag
+- the decimal point character for floating point numbers
+
+musl doesn't do this at all and simply uses the US conventions. 
+
+The focus of my library is to output strings that will be parsed by
+other programs. Therefore, I also follow the musl strategy and use 
+the '.' character as a decimal point.
+
+## Future Directions
+
+The output object shall contain a field which records the number of bytes
+written so far. This will be used by the _out() function. This function
+will also detect the condition where the output length grows beyond the
+integer limit.
+
+More analysis should be done on how strictly type safety should be enforced.
+For example, is "%1$s %1$ls" valid? Pointers to different types of objects
+could be incompatible due to alignment constraints. 
+
+The grouping flag ' shall be implemented. 
+
+An option to provide UTF-8 decoding regardless of setlocale() can be useful.
+All modern machines probably use some sort of UTF-8 locale anyway.
+
+Wide characters which can not be converted to multi-byte sequences are
+currently replaced by the 'X' character. The POSIX specification says
+that such characters should result in the EILSEQ error.
+
+## References
+
+The POSIX specification:
+ 
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/fprintf.html
+
+C specification:
+
+https://en.cppreference.com/w/c/io/fprintf
+
+musl implementation:
+
+https://git.musl-libc.org/cgit/musl/tree/src/stdio/vfprintf.c
+
+glibc implementation:
+
+https://github.com/lattera/glibc/blob/master/stdio-common/vfprintf.c
+
+
