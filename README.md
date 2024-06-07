@@ -103,11 +103,14 @@ after skipping the offending part. For instance:
 printf("Calculating.. %O times %s is: %d\n", 300, "Hello", 0);
 ```
 Here, glibc would skip the %O and then read 300 as a pointer due to the '%s'
-format specifier. This would likely end up crashing the program.
+format specifier. This would likely crash the program.
 
 The second approach is to print until the offending specifier and ignore
 the rest of the format string. This is what musl does. The above call would
-print the string "Calculating.. " in this case.
+print the string "Calculating.. " in this case. 
+
+In both of these choices, there is no way of detecting the error since the
+function is still printing some bytes.
 
 The third option is to print nothing and return an error. This is the safest
 and correct way. The library implements this approach and sets errno to
@@ -189,6 +192,10 @@ Wide characters which can not be converted to multi-byte sequences are
 currently replaced by the 'X' character. The POSIX specification says
 that such characters should result in the EILSEQ error.
 
+The glibc extension '%m' can be quite useful. An integer counterpart
+'%M' could also be implemented. It is also supported by musl according
+to the manual page.
+
 ## References
 
 The POSIX specification:
@@ -207,4 +214,6 @@ glibc implementation:
 
 https://github.com/lattera/glibc/blob/master/stdio-common/vfprintf.c
 
+For comments and patches:
 
+cinarus (at) yahoo (dott) com
